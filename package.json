@@ -17,16 +17,18 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/nodeunit/bin/nodeunit tests/*.js"
+    "test": "./node_modules/.bin/jest"
   },
   "engines": {
     "node": "> 0.7.x"
   },
   "dependencies": {
-    "mongoose": "~2.5.14",
-    "async": "~0.1.22"
+    "async": "~2.6.1",
+    "mongoose": "^5.10.0"
   },
   "devDependencies": {
-    "nodeunit": "~0.7.4"
+    "@shelf/jest-mongodb": "^1.2.2",
+    "jest": "^26.4.0",
+    "mocha": "^8.1.1"
   }
 }
