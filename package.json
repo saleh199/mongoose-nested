@@ -17,7 +17,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha tests/*.js"
+    "test": "./node_modules/.bin/jest"
   },
   "engines": {
     "node": "> 0.7.x"
@@ -27,6 +27,8 @@
     "mongoose": "^5.10.0"
   },
   "devDependencies": {
-    "mocha": "^5.2.0"
+    "@shelf/jest-mongodb": "^1.2.2",
+    "jest": "^26.4.0",
+    "mocha": "^8.1.1"
   }
 }

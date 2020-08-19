@@ -13,11 +13,11 @@ let UserSchema,
     User;
 
 
-describe('NestedSet', function () {
-    before(function (done) {
+describe('NestedSet', () => {
+    beforeAll(done => {
         async.series([
             function (callback) {
-                mongoose.connect('mongodb://localhost/nested_set_test', {useNewUrlParser: true});
+                mongoose.connect(process.env.MONGO_URL, {useNewUrlParser: true, useUnifiedTopology: true});
                 mongoose.set('useCreateIndex', true);
                 callback();
             },
@@ -66,21 +66,21 @@ describe('NestedSet', function () {
         });
     });
 
-    after(function (done) {
+    afterAll(done => {
         mongoose.connection.collections.users.drop(function (err) {
             mongoose.disconnect();
         });
         done();
     });
 
-    it('is same', function (done) {
+    it('is same', done => {
         assert.ok(User);
         assert.equal('function', typeof User);
         assert.equal('User', User.modelName);
         done();
     });
 
-    it('has created users for testing', function (done) {
+    it('has created users for testing', done => {
         User.find(function (err, users) {
             if (err) {
                 console.log(err);
@@ -93,7 +93,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('can read parentIds as ObjectIDs', function (done) {
+    it('can read parentIds as ObjectIDs', done => {
         User.find(function (err, users) {
             if (err) {
                 console.log(err);
@@ -108,7 +108,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('rebuildTree should set lft and rgt based on parentIds', function (done) {
+    it('rebuildTree should set lft and rgt based on parentIds', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function (err) {
                 if (err) console.log(err);
@@ -153,7 +153,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('isLeaf should return true if node is leaf', function (done) {
+    it('isLeaf should return true if node is leaf', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'kelly'}, function (err, kelly) {
@@ -167,7 +167,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('isChild should return true if node has a parent', function (done) {
+    it('isChild should return true if node has a parent', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'kelly'}, function (err, kelly) {
@@ -181,7 +181,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('parent should return parent node', function (done) {
+    it('parent should return parent node', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'kelly'}, function (err, kelly) {
@@ -197,71 +197,83 @@ describe('NestedSet', function () {
         });
     });
 
-    it('selfAndAncestors should return all ancestors higher up in tree + current node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'kelly'}, function (err, kelly) {
-                    kelly.selfAndAncestors(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(['kelly', 'meredith', 'michael'], people.map(function (p) {
-                            return p.username;
-                        }).sort());
-                        done();
+    it(
+        'selfAndAncestors should return all ancestors higher up in tree + current node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'kelly'}, function (err, kelly) {
+                        kelly.selfAndAncestors(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(['kelly', 'meredith', 'michael'], people.map(function (p) {
+                                return p.username;
+                            }).sort());
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('ancestors should return all ancestors higher up in tree', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'kelly'}, function (err, kelly) {
-                    kelly.ancestors(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(['meredith', 'michael'], people.map(function (p) {
-                            return p.username;
-                        }).sort());
-                        done();
+    it(
+        'ancestors should return all ancestors higher up in tree',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'kelly'}, function (err, kelly) {
+                        kelly.ancestors(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(['meredith', 'michael'], people.map(function (p) {
+                                return p.username;
+                            }).sort());
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('ancestors should return empty array if it is a root node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'michael'}, function (err, michael) {
-                    michael.ancestors(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual([], people.map(function (p) {
-                            return p.username;
-                        }).sort());
-                        done();
+    it(
+        'ancestors should return empty array if it is a root node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'michael'}, function (err, michael) {
+                        michael.ancestors(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual([], people.map(function (p) {
+                                return p.username;
+                            }).sort());
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('selfAndChildren should return all children + current node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'michael'}, function (err, michael) {
-                    michael.selfAndChildren(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(['angela', 'jim', 'meredith', 'michael'], people.map(function (p) {
-                            return p.username;
-                        }).sort());
-                        done();
+    it(
+        'selfAndChildren should return all children + current node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'michael'}, function (err, michael) {
+                        michael.selfAndChildren(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(['angela', 'jim', 'meredith', 'michael'], people.map(function (p) {
+                                return p.username;
+                            }).sort());
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('children should return all children', function (done) {
+    it('children should return all children', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'michael'}, function (err, michael) {
@@ -277,26 +289,29 @@ describe('NestedSet', function () {
         });
     });
 
-    it('selfAndDescendants should return all descendants + current node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'michael'}, function (err, michael) {
-                    michael.selfAndDescendants(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(
-                            ['angela', 'creed', 'dwight', 'jim', 'kelly', 'meredith', 'michael', 'oscar', 'phyllis', 'stanley'],
-                            people.map(function (p) {
-                                return p.username;
-                            }).sort()
-                        );
-                        done();
+    it(
+        'selfAndDescendants should return all descendants + current node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'michael'}, function (err, michael) {
+                        michael.selfAndDescendants(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(
+                                ['angela', 'creed', 'dwight', 'jim', 'kelly', 'meredith', 'michael', 'oscar', 'phyllis', 'stanley'],
+                                people.map(function (p) {
+                                    return p.username;
+                                }).sort()
+                            );
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('descendants should return all descendants', function (done) {
+    it('descendants should return all descendants', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'michael'}, function (err, michael) {
@@ -315,7 +330,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('level should return 0 for root node', function (done) {
+    it('level should return 0 for root node', done => {
         User.findOne({username: 'michael'}, function (err, user) {
             User.rebuildTree(user, 1, function () {
                 User.findOne({username: 'michael'}, function (err, michael) {
@@ -329,45 +344,51 @@ describe('NestedSet', function () {
         });
     });
 
-    it('selfAndSiblings should return all nodes with same parent node + current node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'meredith'}, function (err, meredith) {
-                    meredith.selfAndSiblings(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(
-                            ['angela', 'jim', 'meredith'],
-                            people.map(function (p) {
-                                return p.username;
-                            }).sort()
-                        );
-                        done();
+    it(
+        'selfAndSiblings should return all nodes with same parent node + current node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'meredith'}, function (err, meredith) {
+                        meredith.selfAndSiblings(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(
+                                ['angela', 'jim', 'meredith'],
+                                people.map(function (p) {
+                                    return p.username;
+                                }).sort()
+                            );
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('siblings should return all nodes with same parent node', function (done) {
-        User.findOne({username: 'michael'}, function (err, user) {
-            User.rebuildTree(user, 1, function () {
-                User.findOne({username: 'meredith'}, function (err, meredith) {
-                    meredith.siblings(function (err, people) {
-                        assert.ok(!err);
-                        assert.deepEqual(
-                            ['angela', 'jim'],
-                            people.map(function (p) {
-                                return p.username;
-                            }).sort()
-                        );
-                        done();
+    it(
+        'siblings should return all nodes with same parent node',
+        done => {
+            User.findOne({username: 'michael'}, function (err, user) {
+                User.rebuildTree(user, 1, function () {
+                    User.findOne({username: 'meredith'}, function (err, meredith) {
+                        meredith.siblings(function (err, people) {
+                            assert.ok(!err);
+                            assert.deepEqual(
+                                ['angela', 'jim'],
+                                people.map(function (p) {
+                                    return p.username;
+                                }).sort()
+                            );
+                            done();
+                        });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('kelly is a descendant of michael', function (done) {
+    it('kelly is a descendant of michael', done => {
         User.findOne({username: 'michael'}, function (err, michael) {
             User.rebuildTree(michael, 1, function () {
                 User.findOne({username: 'kelly'}, function (err, kelly) {
@@ -379,7 +400,7 @@ describe('NestedSet', function () {
         });
     });
 
-    it('michael is an ancestor of kelly', function (done) {
+    it('michael is an ancestor of kelly', done => {
         User.findOne({username: 'michael'}, function (err, michael) {
             User.rebuildTree(michael, 1, function () {
                 User.findOne({username: 'kelly'}, function (err, kelly) {
@@ -391,125 +412,134 @@ describe('NestedSet', function () {
         });
     });
 
-    it('pre save middleware should not set lft and rgt if there is no parentId', function (done) {
-        let user = new User({
-            username: 'joe'
-        });
+    it(
+        'pre save middleware should not set lft and rgt if there is no parentId',
+        done => {
+            let user = new User({
+                username: 'joe'
+            });
 
-        user.save(function (err, joe) {
-            assert.ok(!err);
-            assert.equal('joe', joe.username);
-            assert.ok(!joe.lft);
-            assert.ok(!joe.rgt);
+            user.save(function (err, joe) {
+                assert.ok(!err);
+                assert.equal('joe', joe.username);
+                assert.ok(!joe.lft);
+                assert.ok(!joe.rgt);
 
-            user.remove(); // Remove user after assertion
+                user.remove(); // Remove user after assertion
 
-            done();
-        });
-    });
+                done();
+            });
+        }
+    );
 
-    it('adding a new node to a built tree should re-arrange the tree correctly', function (done) {
-        User.findOne({username: 'michael'}, function (err, michael) {
-            User.rebuildTree(michael, 1, function () {
-                User.findOne({username: 'creed'}, function (err, creed) {
-                    //console.log(creed);
-                    let newUser = new User({
-                        username: 'joe',
-                        parentId: creed._id
-                    });
-                    newUser.save(function (err, joe) {
-                        User.find(function (err, users) {
-                            // see docs/test_tree_after_leaf_insertion.png for the graphical representation of this tree
-                            // with lft/rgt values after the insertion
-                            users.forEach(function (person) {
-                                if (person.username === 'michael') {
-                                    assert.equal(1, person.lft);
-                                    assert.equal(22, person.rgt);
-                                } else if (person.username === 'meredith') {
-                                    assert.equal(2, person.lft);
-                                    assert.equal(9, person.rgt);
-                                } else if (person.username === 'jim') {
-                                    assert.equal(10, person.lft);
-                                    assert.equal(17, person.rgt);
-                                } else if (person.username === 'angela') {
-                                    assert.equal(18, person.lft);
-                                    assert.equal(21, person.rgt);
-                                } else if (person.username === 'kelly') {
-                                    assert.equal(3, person.lft);
-                                    assert.equal(4, person.rgt);
-                                } else if (person.username === 'creed') {
-                                    assert.equal(5, person.lft);
-                                    assert.equal(8, person.rgt);
-                                } else if (person.username === 'phyllis') {
-                                    assert.equal(11, person.lft);
-                                    assert.equal(12, person.rgt);
-                                } else if (person.username === 'stanley') {
-                                    assert.equal(13, person.lft);
-                                    assert.equal(14, person.rgt);
-                                } else if (person.username === 'dwight') {
-                                    assert.equal(15, person.lft);
-                                    assert.equal(16, person.rgt);
-                                } else if (person.username === 'oscar') {
-                                    assert.equal(19, person.lft);
-                                    assert.equal(20, person.rgt);
-                                } else if (person.username === 'joe') {
-                                    assert.equal(6, person.lft);
-                                    assert.equal(7, person.rgt);
-                                }
+    it(
+        'adding a new node to a built tree should re-arrange the tree correctly',
+        done => {
+            User.findOne({username: 'michael'}, function (err, michael) {
+                User.rebuildTree(michael, 1, function () {
+                    User.findOne({username: 'creed'}, function (err, creed) {
+                        //console.log(creed);
+                        let newUser = new User({
+                            username: 'joe',
+                            parentId: creed._id
+                        });
+                        newUser.save(function (err, joe) {
+                            User.find(function (err, users) {
+                                // see docs/test_tree_after_leaf_insertion.png for the graphical representation of this tree
+                                // with lft/rgt values after the insertion
+                                users.forEach(function (person) {
+                                    if (person.username === 'michael') {
+                                        assert.equal(1, person.lft);
+                                        assert.equal(22, person.rgt);
+                                    } else if (person.username === 'meredith') {
+                                        assert.equal(2, person.lft);
+                                        assert.equal(9, person.rgt);
+                                    } else if (person.username === 'jim') {
+                                        assert.equal(10, person.lft);
+                                        assert.equal(17, person.rgt);
+                                    } else if (person.username === 'angela') {
+                                        assert.equal(18, person.lft);
+                                        assert.equal(21, person.rgt);
+                                    } else if (person.username === 'kelly') {
+                                        assert.equal(3, person.lft);
+                                        assert.equal(4, person.rgt);
+                                    } else if (person.username === 'creed') {
+                                        assert.equal(5, person.lft);
+                                        assert.equal(8, person.rgt);
+                                    } else if (person.username === 'phyllis') {
+                                        assert.equal(11, person.lft);
+                                        assert.equal(12, person.rgt);
+                                    } else if (person.username === 'stanley') {
+                                        assert.equal(13, person.lft);
+                                        assert.equal(14, person.rgt);
+                                    } else if (person.username === 'dwight') {
+                                        assert.equal(15, person.lft);
+                                        assert.equal(16, person.rgt);
+                                    } else if (person.username === 'oscar') {
+                                        assert.equal(19, person.lft);
+                                        assert.equal(20, person.rgt);
+                                    } else if (person.username === 'joe') {
+                                        assert.equal(6, person.lft);
+                                        assert.equal(7, person.rgt);
+                                    }
+                                });
+                                done();
+
+                                newUser.remove(); // Remove user after assertion
                             });
-                            done();
-
-                            newUser.remove(); // Remove user after assertion
                         });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 
-    it('removing a node to a built tree should re-arrange the tree correctly', function (done) {
-        User.findOne({username: 'michael'}, function (err, michael) {
-            User.rebuildTree(michael, 1, function () {
-                User.findOne({username: 'creed'}, function (err, creed) {
-                    creed.remove(function () {
-                        User.find(function (err, users) {
-                            // see docs/test_tree_after_leaf_insertion.png for the graphical representation of this tree
-                            // with lft/rgt values after the insertion
-                            users.forEach(function (person) {
-                                if (person.username === 'michael') {
-                                    assert.equal(1, person.lft);
-                                    assert.equal(18, person.rgt);
-                                } else if (person.username === 'meredith') {
-                                    assert.equal(2, person.lft);
-                                    assert.equal(5, person.rgt);
-                                } else if (person.username === 'jim') {
-                                    assert.equal(6, person.lft);
-                                    assert.equal(13, person.rgt);
-                                } else if (person.username === 'angela') {
-                                    assert.equal(14, person.lft);
-                                    assert.equal(17, person.rgt);
-                                } else if (person.username === 'kelly') {
-                                    assert.equal(3, person.lft);
-                                    assert.equal(4, person.rgt);
-                                } else if (person.username === 'phyllis') {
-                                    assert.equal(7, person.lft);
-                                    assert.equal(8, person.rgt);
-                                } else if (person.username === 'stanley') {
-                                    assert.equal(9, person.lft);
-                                    assert.equal(10, person.rgt);
-                                } else if (person.username === 'dwight') {
-                                    assert.equal(11, person.lft);
-                                    assert.equal(12, person.rgt);
-                                } else if (person.username === 'oscar') {
-                                    assert.equal(15, person.lft);
-                                    assert.equal(16, person.rgt);
-                                }
+    it(
+        'removing a node to a built tree should re-arrange the tree correctly',
+        done => {
+            User.findOne({username: 'michael'}, function (err, michael) {
+                User.rebuildTree(michael, 1, function () {
+                    User.findOne({username: 'creed'}, function (err, creed) {
+                        creed.remove(function () {
+                            User.find(function (err, users) {
+                                // see docs/test_tree_after_leaf_insertion.png for the graphical representation of this tree
+                                // with lft/rgt values after the insertion
+                                users.forEach(function (person) {
+                                    if (person.username === 'michael') {
+                                        assert.equal(1, person.lft);
+                                        assert.equal(18, person.rgt);
+                                    } else if (person.username === 'meredith') {
+                                        assert.equal(2, person.lft);
+                                        assert.equal(5, person.rgt);
+                                    } else if (person.username === 'jim') {
+                                        assert.equal(6, person.lft);
+                                        assert.equal(13, person.rgt);
+                                    } else if (person.username === 'angela') {
+                                        assert.equal(14, person.lft);
+                                        assert.equal(17, person.rgt);
+                                    } else if (person.username === 'kelly') {
+                                        assert.equal(3, person.lft);
+                                        assert.equal(4, person.rgt);
+                                    } else if (person.username === 'phyllis') {
+                                        assert.equal(7, person.lft);
+                                        assert.equal(8, person.rgt);
+                                    } else if (person.username === 'stanley') {
+                                        assert.equal(9, person.lft);
+                                        assert.equal(10, person.rgt);
+                                    } else if (person.username === 'dwight') {
+                                        assert.equal(11, person.lft);
+                                        assert.equal(12, person.rgt);
+                                    } else if (person.username === 'oscar') {
+                                        assert.equal(15, person.lft);
+                                        assert.equal(16, person.rgt);
+                                    }
+                                });
+                                done();
                             });
-                            done();
                         });
                     });
                 });
             });
-        });
-    });
+        }
+    );
 });
